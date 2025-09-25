@@ -1,0 +1,81 @@
+name: Build and Push to ECR
+
+on:
+  push:
+    branches:
+      - dev
+      - master
+
+env:
+  IMAGE_NAME : gic-app
+  REPO_NAME : gic-artifacts
+  AWS_ACCOUNT_ID: ${{ secrets.ACCOUNT_ID }}
+  REGION : ${{ secrets.AWS_REGION }}
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region ap-southeast-1 \
+          | docker login --username AWS --password-stdin ${{ secrets.ACCOUNT_ID }}.dkr.ecr.ap-southeast-1.amazonaws.com
+
+      - name: Install dependencies for scans
+        run: | 
+          echo "Installing dependencies"
+          python -m pip install --upgrade pip==25.2 setuptools==78.1.1
+          pip install bandit safety
+
+      - name: Bandit security scan
+        run: bandit -r .
+
+      - name: Build Docker image
+        run: |
+          docker build -t $IMAGE_NAME:$IMAGE_TAG .
+
+      - name: Scan Docker image with Trivy
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image --exit-code 0 --ignore-unfixed $IMAGE_NAME:$IMAGE_TAG
+
+      - name: Push Docker image to ECR
+        if: success()
+        run: |
+          docker tag $IMAGE_NAME:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO_NAME:$IMAGE_TAG
+          docker push $AWS_ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO_NAME:$IMAGE_TAG
+
+      - name: Register new ECS task definition
+        id: ecs-task
+        run: |
+          CLUSTER_NAME=web-cluster
+          SERVICE_NAME=web-service
+          TASK_FAMILY=web-task
+          IMAGE_URI=${{ secrets.ACCOUNT_ID }}.dkr.ecr.ap-southeast-1.amazonaws.com/gic-artifacts:$IMAGE_TAG
+          REGION=${{ secrets.AWS_REGION }}
+
+          TASK_DEF=$(aws ecs describe-task-definition --task-definition $TASK_FAMILY --region=$REGION)
+          CONTAINER_NAME=$(echo $TASK_DEF | jq -r '.taskDefinition.containerDefinitions[0].name')
+
+          NEW_TASK_DEF=$(echo $TASK_DEF | jq --arg IMAGE_URI "$IMAGE_URI" '.taskDefinition | {family: .family, networkMode: .networkMode, containerDefinitions: (.containerDefinitions | map(.image=$IMAGE_URI)), requiresCompatibilities: .requiresCompatibilities, cpu: .cpu, memory: .memory, executionRoleArn: .executionRoleArn, taskRoleArn: .taskRoleArn}')
+
+          echo "$NEW_TASK_DEF" > new-task-def.json
+          aws ecs register-task-definition --cli-input-json file://new-task-def.json --region $REGION
+
+          NEW_TASK_DEF_ARN=$(aws ecs describe-task-definition --task-definition $TASK_FAMILY --region $REGION | jq -r '.taskDefinition.taskDefinitionArn')
+          aws ecs update-service --cluster $CLUSTER_NAME --service $SERVICE_NAME --task-definition $NEW_TASK_DEF_ARN --region $REGION
