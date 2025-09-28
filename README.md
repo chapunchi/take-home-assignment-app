@@ -90,6 +90,14 @@ Furthermore to check if application is healthy,
 If you have a 200 response the web application is working as expected.
 
 ## Test Application
+
+First configure AWS credentials in terminal,
+```bash
+export AWS_ACCESS_KEY_ID=AKIATJAWX6WOP5KJ6FHU
+export AWS_SECRET_ACCESS_KEY=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
+export AWS_DEFAULT_REGION=ap-southeast-1
+```
+
 To test application you can open a terminal and input below parameters,
 1. Get the balance from the bank account,
 ```bash
