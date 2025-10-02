@@ -15,7 +15,9 @@ env:
 
 jobs:
   build-and-push:
-    runs-on: codebuild-gic-${{ github.run_id }}-${{ github.run_attempt }}
+    runs-on: 
+      - codebuild-gic-${{ github.run_id }}-${{ github.run_attempt }}
+        buildspec-override:true
 
     permissions:
       contents: read
