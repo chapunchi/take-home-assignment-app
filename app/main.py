@@ -221,7 +221,7 @@ def withdraw():
             Key={"account_id": account_id},
             UpdateExpression="SET current_balance = current_balance - :val, daily_amount_withdrawn=daily_amount_withdrawn + :val",
             ExpressionAttributeValues={":val": amount},
-            ConditionExpression="attribute_exists(account_id) AND current_balance >= :val AND (attribute_not_exists(daily_amount_withdrawn))",
+            ConditionExpression="attribute_exists(account_id) AND current_balance >= :val",
             ReturnValues="ALL_NEW"
         )
     except ClientError as e:
