@@ -35,7 +35,7 @@ jobs:
       - name: Run CodeBuild
         uses: aws-actions/aws-codebuild-run-build@v1
         with:
-          project-name: gci
+          project-name: gic
 
       - name: Login to Amazon ECR
         run: |
