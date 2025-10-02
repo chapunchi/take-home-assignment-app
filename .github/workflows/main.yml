@@ -15,11 +15,7 @@ env:
 
 jobs:
   build-and-push:
-    runs-on: 
-      - codebuild-gic-${{ github.run_id }}-${{ github.run_attempt }}
-        buildspec-override:true
-        image:ubuntu-5.0
-        instance-size:medium
+    runs-on: ubuntu-latest
 
     permissions:
       contents: read
@@ -35,6 +31,11 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Run CodeBuild
+        uses: aws-actions/aws-codebuild-run-build@v1
+        with:
+          project-name: gci
 
       - name: Login to Amazon ECR
         run: |
