@@ -183,15 +183,12 @@ def withdraw():
 
     account_id = data.get("account_id")
     raw_amount = data.get("amount")
-    daily_limit = data.get("daily_limit")
-    daily_amount_withdrawn = data.get("amount_withdrawn")
-    withdraw_flag = data.get("withdraw_flag")
+    # daily_limit = data.get("daily_limit")
+    # daily_amount_withdrawn = data.get("amount_withdrawn")
+    # withdraw_flag = data.get("withdraw_flag")
 
     # Validates if account is valid
     if not account_id:
-        return jsonify({"error": "Invalid account_id"}), 400
-    
-    if not withdraw_flag:
         return jsonify({"error": "Invalid account_id"}), 400
 
     try:
@@ -203,17 +200,33 @@ def withdraw():
         return jsonify({"error": "Invalid amount"}), 400
 
     try:
+
+        # Get current details from DDB
+        account = table.get_item(
+            Key={"account_id": account_id}
+        ).get("Item")
+
+        if not account:
+            return jsonify({"error": "Account not found"}), 404
+        
+        daily_limit = Decimal(str(account.get("daily_limit", 0)))
+        daily_amount_withdrawn = Decimal(str(account.get("daily_amount_withdrawn", 0)))
+        current_balance = Decimal(str(account.get("current_balance", 0)))
+
+        if daily_amount_withdrawn +  amount > daily_limit:
+            return jsonify({"error": "Daily limit exceeded"}), 400
+        
         # Update the records in the DynamoDB
         response = table.update_item(
             Key={"account_id": account_id},
-            UpdateExpression="SET current_balance = current_balance - :val AND daily_amount_withdrawn=daily_amount_withdrawn + :val",
+            UpdateExpression="SET current_balance = current_balance - :val, daily_amount_withdrawn=daily_amount_withdrawn + :val",
             ExpressionAttributeValues={":val": amount},
-            ConditionExpression="attribute_exists(account_id) AND current_balance >= :val AND withdraw_flag !='N' AND daily_limit>= :daily_amount_withdrawn",
+            ConditionExpression="attribute_exists(account_id) AND current_balance >= :val AND (attribute_not_exists(daily_amount_withdrawn) OR daily_amount_withdrawn + :val <= daily_limit)",
             ReturnValues="ALL_NEW"
         )
     except ClientError as e:
         if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
-            return jsonify({"error": "Insufficient balance or account not found"}), 404
+            return jsonify({"error": "Insufficient balance or account not found or daily limit exceeded"}), 404
         else:
             return jsonify({"error": "Internal server error"}), 500
 
