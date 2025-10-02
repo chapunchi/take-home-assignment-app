@@ -172,7 +172,7 @@ All the resources are deployed in ***ap-southeast-1*** region.
 Now the daily_amount_withdrawn = 100
 daily_limit = 500
 
-we are going to withdraw = 100
+we are going to withdraw = 400
 ![daily_first_withdrawal](resources/daily_first_withdrawal.png) 
 
 3. Second daily withdrawal
