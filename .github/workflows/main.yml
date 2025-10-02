@@ -18,6 +18,8 @@ jobs:
     runs-on: 
       - codebuild-gic-${{ github.run_id }}-${{ github.run_attempt }}
         buildspec-override:true
+        image:ubuntu-5.0
+        instance-size:medium
 
     permissions:
       contents: read
