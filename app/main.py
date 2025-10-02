@@ -205,7 +205,7 @@ def withdraw():
         # Update the records in the DynamoDB
         response = table.update_item(
             Key={"account_id": account_id},
-            UpdateExpression="SET current_balance = current_balance - :val AND daily_limit=daily_limit-:val",
+            UpdateExpression="SET current_balance = current_balance - :val AND daily_limit=daily_limit - :val",
             ExpressionAttributeValues={":val": amount},
             ConditionExpression="attribute_exists(account_id) AND current_balance >= :val AND withdraw_flag !='N' AND daily_limit>= :val",
             ReturnValues="ALL_NEW"
