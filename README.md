@@ -165,7 +165,7 @@ All the resources are deployed in ***ap-southeast-1*** region.
 
 
 ## Tasks during the interview
-1. Deposit to get the daily_amount_withdrawn and daily_limit
+1. Deposit to get the daily_amount_withdrawn and daily_limit 
 ![deposit_acc](resources/deposit_acc.png)
 
 2. First daily withdrawal
@@ -173,12 +173,12 @@ Now the daily_amount_withdrawn = 100
 daily_limit = 500
 
 we are going to withdraw = 100
-![deposit_acc](resources/daily_first_withdrawal.png)
+![deposit_acc](resources/daily_first_withdrawal.png) 
 
 3. Second daily withdrawal
 Now daily_amount_withdrawn = 500
 daily_limit = 500
 
-![limit_exceeded](resources/daily_limit_exceeded.png)
+![limit_exceeded](resources/daily_limit_exceeded.png) 
 
 Giving the error Daily Limit exceeded
