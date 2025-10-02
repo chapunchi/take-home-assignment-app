@@ -183,6 +183,7 @@ def withdraw():
 
     account_id = data.get("account_id")
     raw_amount = data.get("amount")
+    daily_limit = data.get("daily_limit")
     withdraw_flag = data.get("withdraw_flag")
 
     # Validates if account is valid
@@ -206,7 +207,7 @@ def withdraw():
             Key={"account_id": account_id},
             UpdateExpression="SET current_balance = current_balance - :val",
             ExpressionAttributeValues={":val": amount},
-            ConditionExpression="attribute_exists(account_id) AND current_balance >= :val AND withdraw_flag !='Y'",
+            ConditionExpression="attribute_exists(account_id) AND current_balance >= :val AND withdraw_flag !='Y' AND daily_limit>:val",
             ReturnValues="ALL_NEW"
         )
     except ClientError as e:
