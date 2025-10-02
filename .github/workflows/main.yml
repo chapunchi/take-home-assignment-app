@@ -36,6 +36,12 @@ jobs:
         uses: aws-actions/aws-codebuild-run-build@v1
         with:
           project-name: gic
+          buildspec-override: |
+            version: 0.2
+            phases:
+              build:
+                commands:
+                  - echo "This runs instead of buildspec.yml"
 
       - name: Login to Amazon ECR
         run: |
