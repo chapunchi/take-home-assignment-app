@@ -184,6 +184,7 @@ def withdraw():
     account_id = data.get("account_id")
     raw_amount = data.get("amount")
     daily_limit = data.get("daily_limit")
+    daily_amount_withdrawn = data.get("amount_withdrawn")
     withdraw_flag = data.get("withdraw_flag")
 
     # Validates if account is valid
@@ -205,9 +206,9 @@ def withdraw():
         # Update the records in the DynamoDB
         response = table.update_item(
             Key={"account_id": account_id},
-            UpdateExpression="SET current_balance = current_balance - :val AND daily_limit=daily_limit - :val",
+            UpdateExpression="SET current_balance = current_balance - :val AND daily_amount_withdrawn=daily_amount_withdrawn + :val",
             ExpressionAttributeValues={":val": amount},
-            ConditionExpression="attribute_exists(account_id) AND current_balance >= :val AND withdraw_flag !='N' AND daily_limit>= :val",
+            ConditionExpression="attribute_exists(account_id) AND current_balance >= :val AND withdraw_flag !='N' AND daily_limit>= :daily_amount_withdrawn",
             ReturnValues="ALL_NEW"
         )
     except ClientError as e:
