@@ -183,9 +183,13 @@ def withdraw():
 
     account_id = data.get("account_id")
     raw_amount = data.get("amount")
+    withdraw_flag = data.get("withdraw_flag")
 
     # Validates if account is valid
     if not account_id:
+        return jsonify({"error": "Invalid account_id"}), 400
+    
+    if not withdraw_flag:
         return jsonify({"error": "Invalid account_id"}), 400
 
     try:
@@ -202,7 +206,7 @@ def withdraw():
             Key={"account_id": account_id},
             UpdateExpression="SET current_balance = current_balance - :val",
             ExpressionAttributeValues={":val": amount},
-            ConditionExpression="attribute_exists(account_id) AND current_balance >= :val",
+            ConditionExpression="attribute_exists(account_id) AND current_balance >= :val AND withdraw_flag !='Y'",
             ReturnValues="ALL_NEW"
         )
     except ClientError as e:
